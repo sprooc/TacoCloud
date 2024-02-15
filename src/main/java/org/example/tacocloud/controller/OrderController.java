@@ -9,6 +9,8 @@ import org.example.tacocloud.data.UserRepository;
 import org.example.tacocloud.entity.TacoOrder;
 import org.example.tacocloud.entity.User;
 
+import org.example.tacocloud.messaging.OrderMessagingService;
+import org.example.tacocloud.messaging.RabbitOrderMessagingService;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -30,11 +32,12 @@ public class OrderController {
     private OrderRepository orderRepo;
     private UserRepository userRepo;
     private OrderProps orderProps;
-
-    public OrderController(OrderRepository orderRepo, UserRepository userRepo, OrderProps orderProps) {
+    private RabbitOrderMessagingService messageService;
+    public OrderController(OrderRepository orderRepo, UserRepository userRepo, OrderProps orderProps, RabbitOrderMessagingService messageService) {
         this.orderRepo = orderRepo;
         this.userRepo = userRepo;
         this.orderProps = orderProps;
+        this.messageService = messageService;
     }
 
     @GetMapping("/current")
@@ -49,6 +52,7 @@ public class OrderController {
             return "orderForm";
         }
         order.setUser(user);
+        messageService.sendOrder(order);
         orderRepo.save(order);
         sessionStatus.setComplete();
         log.info("Order submitted: " + order);

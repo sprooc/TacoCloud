@@ -1,36 +1,40 @@
 package org.example.tacocloud.config;
 
+import com.nimbusds.jose.jwk.source.JWKSource;
+
+import com.nimbusds.jose.proc.SecurityContext;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import org.example.tacocloud.Service.UserDetailService;
 import org.example.tacocloud.data.UserRepository;
 import org.example.tacocloud.entity.User;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.web.server.ServerHttpSecurity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.oauth2.core.user.OAuth2User;
-import org.springframework.security.provisioning.InMemoryUserDetailsManager;
+import org.springframework.security.oauth2.jwt.JwtDecoder;
+import org.springframework.security.oauth2.jwt.ReactiveJwtDecoder;
+import org.springframework.security.oauth2.jwt.ReactiveJwtDecoders;
 import org.springframework.security.web.SecurityFilterChain;
-import org.thymeleaf.expression.Arrays;
 
-import java.awt.*;
 import java.io.IOException;
 import java.util.ArrayList;
 
 @Configuration
 public class SecurityConfig {
+
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
@@ -49,6 +53,8 @@ public class SecurityConfig {
                 .authorizeRequests(requests -> requests
                         .requestMatchers("/admin").hasRole("ADMIN")
                         .requestMatchers("/design", "/orders", "/orders/*").hasRole("USER")
+                        .requestMatchers(HttpMethod.PUT, "/api/tacos/*").hasAuthority("SCOPE_writeTacos")
+                        .requestMatchers(HttpMethod.DELETE, "/api/tacos/*").hasAuthority("SCOPE_deleteTacos")
                         .requestMatchers("/", "/**", "/login/**").permitAll()
                 )
                 .formLogin(formLogin ->
@@ -62,8 +68,11 @@ public class SecurityConfig {
                         .logoutSuccessUrl("/design"))
                 .headers(headers -> headers
                         .frameOptions(frameOpt -> frameOpt.disable()))
+                .oauth2ResourceServer(oauth2 -> oauth2.jwt(jwt -> jwt
+                                .jwkSetUri("http://localhost:9000/oauth2/jwks")))
                 .build();
     }
+
     private void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response,
                                          Authentication authentication) throws IOException {
         // 在这里可以获取用户信息，并根据需要给用户授予角色

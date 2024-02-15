@@ -16,8 +16,42 @@ spring:
             token-uri: https://gitee.com/oauth/token
             user-info-uri: https://gitee.com/api/v5/user
             user-name-attribute: name
+        resourceserver:
+          jwt:
+            issuer-uri: http://localhost:9000/oauth2/jwks
+  data:
+    rest:
+      base-path: /data-api
+  artemis:
+    user: tacoweb
+    password: 456915
+    broker-url: tcp://localhost:61616
+    mode: native
+  jms:
+    template:
+      default-destination: tacocloud.order.queue
+  kafka:
+    bootstrap-servers:
+      - localhost:9092
+  mail:
+    password: oqokeivekzivjjee
+    username: 1127626033@qq.com
+    host: imap.qq.com
+    port: 143
+    protocol: imaps
 
 
+tacocloud:
+  email:
+    host: imap.qq.com
+    mailbox: INBOX
+    username: 1127626033@qq.com
+    password: oqokeivekzivjjee
+
+#  rabbitmq:
+#    template:
+#      exchange: tacocloud.orders
+#      routing-key: kitchens.central
 #  datasource:
 #    driver-class-name: com.mysql.cj.jdbc.Driver
 #    url: jdbc:mysql://localhost:3306/tacocloud?serverTimezone=GMT%2B8&useUnicode=true&characterEncoding=UTF-8
